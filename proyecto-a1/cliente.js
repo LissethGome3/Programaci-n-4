@@ -1,181 +1,175 @@
-Vue.component('v-select-categoria',VueSelect.VueSelect);
-Vue.component('cliente',{
+Vue.component('cliente', {
     data:()=>{
         return {
-            buscar:'',
-            clientes:[],
-            categorias:[],
-            cliente:{
-                accion : 'nuevo',
-                mostrar_msg : false,
+            clientes: [],
+            buscar: '',
+            cliente: {
+                accion: 'nuevo',
                 msg : '',
-                categoria: {
-                    id: '',
-                    label: '',
-                },
-                idcliente : '',
+                idCliente: '',
                 codigo: '',
                 nombre: '',
-                marca : '',
-                precio : '',
+                direccion: '',
+                telefono: '',
+                dui: ''
             }
         }
     },
-    methods:{
-        buscandocliente(){
-            this.obtenerclientes(this.buscar);
+    methods: {
+        buscarCliente(){
+            this.obtenerDatos(this.buscar);
         },
-        eliminarcliente(cliente){
-            if( confirm(`Esta seguro de eliminar el cliente ${cliente.nombre}?`) ){
-                this.cliente.accion = 'eliminar';
-                this.cliente.idcliente = cliente.idcliente;
-                this.guardarcliente();
-            }
-            this.nuevocliente();
-        },
-        modificarcliente(datos){
-            this.cliente = JSON.parse(JSON.stringify(datos));
-            this.cliente.accion = 'modificar';
-        },
-        guardarcliente(){
-            this.obtenerclientes();
-            let clientes = JSON.parse(localStorage.getItem('clientes')) || [];
-            if(this.cliente.accion=="nuevo"){
-                this.cliente.idcliente = generarIdUnicoFecha();
+        guardarCliente(){
+            this.obtenerDatos();
+            let clientes = this.clientes || [];
+            if( this.cliente.accion == 'nuevo' ){
+                this.cliente.idCliente = idUnicoFecha();
                 clientes.push(this.cliente);
-            } else if(this.cliente.accion=="modificar"){
-                let index = clientes.findIndex(cliente=>cliente.idcliente==this.cliente.idcliente);
+            }else if( this.cliente.accion == 'modificar' ){
+                let index = clientes.findIndex(cliente=>cliente.idCliente==this.cliente.idCliente);
                 clientes[index] = this.cliente;
-            } else if( this.cliente.accion=="eliminar" ){
-                let index = clientes.findIndex(cliente=>cliente.idcliente==this.cliente.idcliente);
+            }else if( this.cliente.accion == 'eliminar' ){
+                let index = clientes.findIndex(cliente=>cliente.idCliente==this.cliente.idCliente);
                 clientes.splice(index,1);
             }
             localStorage.setItem('clientes', JSON.stringify(clientes));
-            this.nuevocliente();
-            this.obtenerclientes();
-            this.cliente.msg = 'cliente procesado con exito';
+            this.cliente.msg = 'Cliente procesado con exito';
+            this.nuevoCliente();
+            this.obtenerDatos();
         },
-        obtenerclientes(valor=''){
+        modificarCliente(data){
+            this.cliente = JSON.parse(JSON.stringify(data));
+            this.cliente.accion = 'modificar';
+        },
+        eliminarCliente(data){
+            if( confirm(`¿Esta seguro de eliminar el cliente ${data.nombre}?`) ){
+                this.cliente.idCliente = data.idCliente;
+                this.cliente.accion = 'eliminar';
+                this.guardarCliente();
+            }
+        },
+        obtenerDatos(busqueda=''){
             this.clientes = [];
-            let clientes = JSON.parse(localStorage.getItem('clientes')) || [];
-            this.clientes = clientes.filter(cliente=>cliente.nombre.toLowerCase().indexOf(valor.toLowerCase())>-1);
-
-            this.categorias = [];
-            let categorias = JSON.parse(localStorage.getItem('categorias')) || [];
-            this.categorias = categorias.map(categoria=>{
-                return {
-                    id: categoria.idCategoria,
-                    label: categoria.nombre,
+            if( localStorage.getItem('clientes')!=null ){
+                for(let i=0; i<JSON.parse(localStorage.getItem('clientes')).length; i++){
+                    let data = JSON.parse(localStorage.getItem('clientes'))[i];
+                    if( this.buscar.length>0 ){
+                        if( data.nombre.toLowerCase().indexOf(this.buscar.toLowerCase())>-1 ){
+                            this.clientes.push(data);
+                        }
+                    }else{
+                        this.clientes.push(data);
+                    }
                 }
-            });
+            }
         },
-        nuevocliente(){
+        nuevoCliente(){
             this.cliente.accion = 'nuevo';
-            this.cliente.msg = '';
-            this.cliente.idcliente = '';
+            this.cliente.idCliente = '';
             this.cliente.codigo = '';
             this.cliente.nombre = '';
-            this.cliente.marca = '';
-            this.cliente.precio = '';
+            this.cliente.direccion = '';
+            this.cliente.telefono = '';
+            this.cliente.dui = '';
+            this.cliente.msg = '';
         }
-    },
+    }, 
     created(){
-        this.obtenerclientes();
+        this.obtenerDatos();
     },
-    template:`
-        <div id="appCiente">
-            <div class="card text-white" id="carcliente">
-                <div class="card-header bg-primary">
-                    Registro de clientes
-                    <button type="button" class="btn-close text-end" data-bs-dismiss="alert" data-bs-target="#carcliente" aria-label="Close"></button>
-                </div>
-                <div class="card-body text-dark">
-                    <form method="post" @submit.prevent="guardarcliente" @reset="nuevocliente">
+    template: `
+        <div id='appCliente'>
+            <form @submit.prevent="guardarCliente" @reset.prevent="nuevoCliente" method="post" id="frmCliente">
+                <div class="card mb-3">
+                    <div class="card-header text-white bg-dark">
+                        Administracion de Clientes
+                        <button type="button" class="btn-close bg-white" data-bs-dismiss="alert" data-bs-target="#frmCliente" aria-label="Close"></button>
+                    </div>
+                    <div class="card-body">
                         <div class="row p-1">
+                            <div class="col col-md-1">Codigo</div>
                             <div class="col col-md-2">
-                                Categoria:
-                            </div>
-                            <div class="col col-md-3">
-                                <v-select-categoria v-model="cliente.categoria" 
-                                    :options="categorias" placeholder="Seleccione una categoria"/>
+                                <input v-model="cliente.codigo" placeholder="codigo" pattern="[A-Z0-9]{3,10}" required title="Codigo de cliente" class="form-control" type="text">
                             </div>
                         </div>
                         <div class="row p-1">
-                            <div class="col col-md-2">Codigo:</div>
+                            <div class="col col-md-1">Nombre</div>
                             <div class="col col-md-2">
-                                <input title="Ingrese el codigo" v-model="cliente.codigo" pattern="[0-9]{3,10}" required type="text" class="form-control">
+                                <input v-model="cliente.nombre" placeholder="escribe tu nombre" pattern="[A-Za-zÑñáéíóú ]{3,75}" required title="Nombre de cliente" class="form-control" type="text">
                             </div>
                         </div>
                         <div class="row p-1">
-                            <div class="col col-md-2">Nombre:</div>
-                            <div class="col col-md-3">
-                                <input title="Ingrese el nombre" v-model="cliente.nombre" pattern="[A-Za-zñÑáéíóúü ]{3,75}" required type="text" class="form-control">
+                            <div class="col col-md-1">Direccion</div>
+                            <div class="col col-md-2">
+                                <input v-model="cliente.direccion" placeholder="donde vives" pattern="[A-Za-z0-9Ññáéíóú ]{3,100}" required title="Direccion de cliente" class="form-control" type="text">
                             </div>
                         </div>
                         <div class="row p-1">
-                            <div class="col col-md-2">Marca:</div>
-                            <div class="col col-md-3">
-                                <input title="Ingrese la marca" v-model="cliente.marca" pattern="[A-Za-zñÑáéíóúü ]{3,75}" required type="text" class="form-control">
+                            <div class="col col-md-1">Telefono</div>
+                            <div class="col col-md-2">
+                                <input v-model="cliente.telefono" placeholder="tu tel" pattern="[0-9]{4}-[0-9]{4}" required title="Telefono de cliente" class="form-control" type="text">
                             </div>
                         </div>
                         <div class="row p-1">
-                            <div class="col col-md-2">Precio:</div>
-                            <div class="col col-md-3">
-                                <input title="Ingrese el Precio" v-model="cliente.precio" pattern="[0-9.]{1,10}" required type="text" class="form-control">
+                            <div class="col col-md-1">DUI</div>
+                            <div class="col col-md-2">
+                                <input v-model="cliente.dui" placeholder="tu DUI" pattern="[0-9]{8}-[0-9]{1}" required title="DUI de cliente" class="form-control" type="text">
                             </div>
                         </div>
-                        <div class="row p-1">
-                            <div class="col col-md-5 text-center">
-                                <div v-if="cliente.mostrar_msg" class="alert alert-primary alert-dismissible fade show" role="alert">
+                        <div class="row">
+                            <div class="col col-md-3 text-center">
+                                <div class="alert alert-warning alert-dismissible fade show" role="alert">
                                     {{ cliente.msg }}
                                     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                                 </div>
                             </div>
                         </div>
-                        <div class="row m-2">
-                            <div class="col col-md-5 text-center">
-                                <input class="btn btn-success" type="submit" value="Guardar">
-                                <input class="btn btn-warning" type="reset" value="Nuevo">
+                        <div class="row">
+                            <div class="col col-md-3 text-center">
+                                <button type="submit" class="btn btn-primary">Guardar</button>
+                                <button type="reset" class="btn btn-warning">Nuevo</button>
                             </div>
                         </div>
-                    </form>
+                    </div>
                 </div>
-            </div>
-            <div class="card text-white" id="carBuscarcliente">
-                <div class="card-header bg-primary">
-                    Busqueda de clientes
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" data-bs-target="#carBuscarcliente" aria-label="Close"></button>
+            </form>
+            <div class="card mb-3" id="cardBuscarCliente">
+                <div class="card-header text-white bg-dark">
+                    Busqueda de Clientes
+                    <button type="button" class="btn-close bg-white" data-bs-dismiss="alert" data-bs-target="#cardBuscarCliente" aria-label="Close"></button>
                 </div>
                 <div class="card-body">
-                    <table class="table table-dark table-hover">
+                    <table class="table">
                         <thead>
                             <tr>
-                                <th colspan="6">
-                                    Buscar: <input @keyup="buscandocliente" v-model="buscar" placeholder="buscar aqui" class="form-control" type="text" >
-                                </th>
+                                <td colspan="6">
+                                    Buscar: <input title="Introduzca el texto a buscar" @keyup="buscarCliente" v-model="buscar" class="form-control" type="text">
+                                </td>
                             </tr>
                             <tr>
-                                <th>CODIGO</th>
-                                <th>NOMBRE</th>
-                                <th>MARCA</th>
-                                <th>PRECIO</th>
+                                <th>Codigo</th>
+                                <th>Nombre</th>
+                                <th>Direccion</th>
+                                <th>Telefono</th>
+                                <th>DUI</th>
                                 <th></th>
                             </tr>
                         </thead>
                         <tbody>
-                            <tr v-for="item in clientes" @click='modificarcliente( item )' :key="item.idcliente">
+                            <tr v-for="item in clientes" :key="item.idCliente" @click="modificarCliente(item)">
                                 <td>{{item.codigo}}</td>
                                 <td>{{item.nombre}}</td>
-                                <td>{{item.marca}}</td>
-                                <td>{{item.precio}}</td>
+                                <td>{{item.direccion}}</td>
+                                <td>{{item.telefono}}</td>
+                                <td>{{item.dui}}</td>
                                 <td>
-                                    <button class="btn btn-danger" @click="eliminarcliente(item)">Eliminar</button>
+                                    <button type="button" class="btn btn-danger" @click="eliminarCliente(item)">Eliminar</button>
                                 </td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
             </div>
-        </div>
+        </div> 
     `
 });

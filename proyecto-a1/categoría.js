@@ -1,137 +1,146 @@
-Vue.component('categoria',{
+Vue.component('categoria', {
     data:()=>{
         return {
-            buscar:'',
-            categorias:[],
-            categoria:{
-                accion : 'nuevo',
-                mostrar_msg : false,
+            categorias: [],
+            buscar: '',
+            categoria: {
+                accion: 'nuevo',
                 msg : '',
-                idCategoria : '',
+                idCategoria: '',
                 codigo: '',
-                nombre: '',
+                nombre: ''
             }
         }
     },
-    methods:{
-        buscandoCategoria(){
-            this.obtenerCategorias(this.buscar);
-        },
-        eliminarCategoria(categoria){
-            if( confirm(`Esta seguro de eliminar el categoria ${categoria.nombre}?`) ){
-                this.categoria.accion = 'eliminar';
-                this.categoria.idCategoria = categoria.idCategoria;
-                this.guardarCategoria();
-            }
-            this.nuevoCategoria();
-        },
-        modificarCategoria(datos){
-            this.categoria = JSON.parse(JSON.stringify(datos));
-            this.categoria.accion = 'modificar';
+    methods: {
+        buscarCategoria(){
+            this.obtenerDatos(this.buscar);
         },
         guardarCategoria(){
-            this.obtenerCategorias();
-            let categorias = JSON.parse(localStorage.getItem('categorias')) || [];
-            if(this.categoria.accion=="nuevo"){
-                this.categoria.idCategoria = generarIdUnicoFecha();
+            this.obtenerDatos();
+            let categorias = this.categorias || [];
+            if(this.categoria.accion == 'nuevo'){
+                this.categoria.idCategoria = idUnicoFecha();
                 categorias.push(this.categoria);
-            } else if(this.categoria.accion=="modificar"){
+            }else if(this.categoria.accion == 'modificar'){
                 let index = categorias.findIndex(categoria=>categoria.idCategoria==this.categoria.idCategoria);
                 categorias[index] = this.categoria;
-            } else if( this.categoria.accion=="eliminar" ){
+            }else if(this.categoria.accion == 'eliminar'){
                 let index = categorias.findIndex(categoria=>categoria.idCategoria==this.categoria.idCategoria);
                 categorias.splice(index,1);
             }
-            localStorage.setItem('categorias', JSON.stringify(categorias));
-            this.nuevoCategoria();
-            this.obtenerCategorias();
+            localStorage.setItem('categorias', JSON.stringify(this.categoria));
             this.categoria.msg = 'Categoria procesado con exito';
+            this.nuevoCategoria();
+            this.obtenerDatos();
         },
-        obtenerCategorias(valor=''){
+        modificarCategoria(data){
+            this.categoria = JSON.parse(JSON.stringify(data));
+            this.categoria.accion = 'modificar';
+        },
+        eliminarCategoria(data){
+            if( confirm(`¿Esta seguro de eliminar el categoria ${data.nombre}?`) ){
+                this.categoria.idCategoria = data.idCategoria;
+                this.categoria.accion = 'eliminar';
+                this.guardarCategoria();
+            }
+        },
+        obtenerDatos(busqueda=''){
             this.categorias = [];
-            let categorias = JSON.parse(localStorage.getItem('categorias')) || [];
-            this.categorias = categorias.filter(categoria=>categoria.nombre.toLowerCase().indexOf(valor.toLowerCase())>-1);
+            if( localStorage.getItem('categorias')!=null ){
+                for(let i=0; i<JSON.parse(localStorage.getItem('categorias')).length; i++){
+                    let data = JSON.parse(localStorage.getItem('categorias'))[i];
+                    if( this.buscar.length>0 ){
+                        if( data.nombre.toLowerCase().indexOf(this.buscar.toLowerCase())>-1 ){
+                            this.categorias.push(data);
+                        }
+                    }else{
+                        this.categorias.push(data);
+                    }
+                }
+            }
         },
         nuevoCategoria(){
             this.categoria.accion = 'nuevo';
-            this.categoria.msg = '';
             this.categoria.idCategoria = '';
             this.categoria.codigo = '';
             this.categoria.nombre = '';
+            this.categoria.msg = '';
+            console.log(this.categoria);
         }
-    },
+    }, 
     created(){
-        this.obtenerCategorias();
+        this.obtenerDatos();
     },
-    template:`
-        <div id="appCiente">
-            <div class="card text-white" id="carCategoria">
-                <div class="card-header bg-primary">
-                    Registro de Categorias
-                    <button type="button" class="btn-close text-end" data-bs-dismiss="alert" data-bs-target="#carCategoria" aria-label="Close"></button>
-                </div>
-                <div class="card-body text-dark">
-                    <form method="post" @submit.prevent="guardarCategoria" @reset="nuevoCategoria">
+    template: `
+        <div id='appCategoria'>
+            <form @submit.prevent="guardarCategoria" @reset.prevent="nuevoCategoria" method="post" id="frmCategoria">
+                <div class="card mb-3">
+                    <div class="card-header text-white bg-dark">
+                        Administracion de Categorias
+                        <button type="button" class="btn-close bg-white" data-bs-dismiss="alert" data-bs-target="#frmCategoria" aria-label="Close"></button>
+                    </div>
+                    <div class="card-body">
                         <div class="row p-1">
-                            <div class="col col-md-2">Codigo:</div>
+                            <div class="col col-md-1">Codigo</div>
                             <div class="col col-md-2">
-                                <input title="Ingrese el codigo" v-model="categoria.codigo" pattern="[0-9]{3,10}" required type="text" class="form-control">
+                                <input v-model="categoria.codigo" placeholder="codigo" pattern="[A-Z0-9]{3,10}" required title="Codigo de categoria" class="form-control" type="text">
                             </div>
                         </div>
                         <div class="row p-1">
-                            <div class="col col-md-2">Nombre:</div>
-                            <div class="col col-md-3">
-                                <input title="Ingrese el nombre" v-model="categoria.nombre" pattern="[A-Za-zñÑáéíóúü ]{3,75}" required type="text" class="form-control">
+                            <div class="col col-md-1">Nombre</div>
+                            <div class="col col-md-2">
+                                <input v-model="categoria.nombre" placeholder="escribe tu nombre" pattern="[A-Za-zÑñáéíóú ]{3,75}" required title="Nombre de categoria" class="form-control" type="text">
                             </div>
                         </div>
-                        <div class="row p-1">
-                            <div class="col col-md-5 text-center">
-                                <div v-if="categoria.mostrar_msg" class="alert alert-primary alert-dismissible fade show" role="alert">
+                        <div class="row">
+                            <div class="col col-md-3 text-center">
+                                <div class="alert alert-warning alert-dismissible fade show" role="alert">
                                     {{ categoria.msg }}
                                     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                                 </div>
                             </div>
                         </div>
-                        <div class="row m-2">
-                            <div class="col col-md-5 text-center">
-                                <input class="btn btn-success" type="submit" value="Guardar">
-                                <input class="btn btn-warning" type="reset" value="Nuevo">
+                        <div class="row">
+                            <div class="col col-md-3 text-center">
+                                <button type="submit" class="btn btn-primary">Guardar</button>
+                                <button type="reset" class="btn btn-warning">Nuevo</button>
                             </div>
                         </div>
-                    </form>
+                    </div>
                 </div>
-            </div>
-            <div class="card text-white" id="carBuscarCategoria">
-                <div class="card-header bg-primary">
+            </form>
+            <div class="card mb-3" id="cardBuscarCategoria">
+                <div class="card-header text-white bg-dark">
                     Busqueda de Categorias
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" data-bs-target="#carBuscarCategoria" aria-label="Close"></button>
+                    <button type="button" class="btn-close bg-white" data-bs-dismiss="alert" data-bs-target="#cardBuscarCategoria" aria-label="Close"></button>
                 </div>
                 <div class="card-body">
-                    <table class="table table-dark table-hover">
+                    <table class="table">
                         <thead>
                             <tr>
-                                <th colspan="6">
-                                    Buscar: <input @keyup="buscandoCategoria" v-model="buscar" placeholder="buscar aqui" class="form-control" type="text" >
-                                </th>
+                                <td colspan="6">
+                                    Buscar: <input title="Introduzca el texto a buscar" @keyup="buscarCategoria" v-model="buscar" class="form-control" type="text">
+                                </td>
                             </tr>
                             <tr>
-                                <th>CODIGO</th>
-                                <th>NOMBRE</th>
+                                <th>Codigo</th>
+                                <th>Nombre</th>
                                 <th></th>
                             </tr>
                         </thead>
                         <tbody>
-                            <tr v-for="item in categorias" @click='modificarCategoria( item )' :key="item.idCategoria">
+                            <tr v-for="item in categorias" :key="item.idCategoria" @click="modificarCategoria(item)">
                                 <td>{{item.codigo}}</td>
                                 <td>{{item.nombre}}</td>
                                 <td>
-                                    <button class="btn btn-danger" @click="eliminarCategoria(item)">Eliminar</button>
+                                    <button type="button" class="btn btn-danger" @click="eliminarCategoria(item)">Eliminar</button>
                                 </td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
             </div>
-        </div>
+        </div> 
     `
 });
